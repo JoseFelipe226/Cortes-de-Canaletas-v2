@@ -1,39 +1,42 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-PT" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Somador de Projetos - Cortes</title>
     
-    <!-- Favicon Embutido -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2I4MmY2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iNiIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSI2IiBjeT0iMTgiIHI9IjMiLz48bGluZSB4MT0iMjAiIHkxPSI0IiB4Mj0iOC4xMiIgeTI9IjE1Ljg4Ii8+PGxpbmUgeDE9IjE0LjQ3IiB5MT0iMTQuNDgiIHgyPSIyMCIgeTI9IjIwIi8+PGxpbmUgeDE9IjguMTIiIHkxPSI4LjEyIiB4Mj0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==">
     
-    <!-- Tailwind CSS (via CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     
-    <!-- React & ReactDOM (via CDN) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel (para compilar JSX no navegador) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- SheetJS (Excel) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        /* Light mode scrollbar */
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Dark mode scrollbar */
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-200">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
 
-        // Ícones SVG
         const Icons = {
             'calculator': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>,
             'layers': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>,
@@ -41,10 +44,11 @@
             'square': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>,
             'scissors': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
             'excel': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>,
-            'tag': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>,
             'alert-circle': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
             'settings': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg>,
-            'refresh': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            'refresh': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+            'sun': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+            'moon': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         };
 
         const Icon = ({ name, className }) => {
@@ -52,26 +56,31 @@
             return renderIcon ? renderIcon(className) : null;
         };
 
-        // Paleta de cores para os projetos (Tailwind classes)
-        const projectColorsTailwind = [
-            "bg-blue-600", "bg-emerald-600", "bg-amber-600", "bg-purple-600", 
-            "bg-pink-600", "bg-cyan-600", "bg-rose-600", "bg-indigo-600"
-        ];
-
-        // Paleta de cores correspondentes em HEX (para o Excel)
-        const projectColorsHex = [
-            "2563EB", "059669", "D97706", "9333EA", 
-            "DB2777", "0891B2", "E11D48", "4F46E5"
-        ];
+        const projectColorsTailwind = ["bg-blue-600", "bg-emerald-600", "bg-amber-600", "bg-purple-600", "bg-pink-600", "bg-cyan-600", "bg-rose-600", "bg-indigo-600"];
+        const projectColorsHex = ["2563EB", "059669", "D97706", "9333EA", "DB2777", "0891B2", "E11D48", "4F46E5"];
 
         function App() {
-            // Ler os projetos guardados (criados no index.html)
+            // --- CONTROLE DE TEMA ---
+            const [isDark, setIsDark] = useState(() => {
+                const saved = localStorage.getItem('theme');
+                return saved !== 'light'; 
+            });
+
+            useEffect(() => {
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            }, [isDark]);
+
             const [savedProjects, setSavedProjects] = useState(() => {
                 const saved = localStorage.getItem('opt_savedProjects');
                 return saved ? JSON.parse(saved) : {};
             });
 
-            // Estado de configuração global (afeta todos os projetos na hora de somar)
             const [globalStandardLength, setGlobalStandardLength] = useState(() => {
                 const saved = localStorage.getItem('somador_standardLength');
                 return saved !== null ? Number(saved) : 2000;
@@ -82,35 +91,20 @@
                 return saved !== null ? Number(saved) : 0;
             });
 
-            // Projetos Selecionados
             const [selectedProjects, setSelectedProjects] = useState(Object.keys(savedProjects));
-            
-            // Resultados Combinados e Otimizados
             const [combinedResults, setCombinedResults] = useState(null);
 
-            // Gravar definições
             useEffect(() => { localStorage.setItem('somador_standardLength', globalStandardLength); }, [globalStandardLength]);
             useEffect(() => { localStorage.setItem('somador_bladeWidth', globalBladeWidth); }, [globalBladeWidth]);
 
-            // Atualiza a seleção de projetos
             const toggleSelect = (name) => {
-                setSelectedProjects(prev => 
-                    prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
-                );
-                setCombinedResults(null); // Limpa resultados se mudar a seleção
+                setSelectedProjects(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
+                setCombinedResults(null); 
             };
 
-            const selectAll = () => {
-                setSelectedProjects(Object.keys(savedProjects));
-                setCombinedResults(null);
-            };
+            const selectAll = () => { setSelectedProjects(Object.keys(savedProjects)); setCombinedResults(null); };
+            const deselectAll = () => { setSelectedProjects([]); setCombinedResults(null); };
 
-            const deselectAll = () => {
-                setSelectedProjects([]);
-                setCombinedResults(null);
-            };
-
-            // Mapeia cada projeto selecionado para uma cor única
             const colorMap = useMemo(() => {
                 const mapTailwind = {};
                 const mapHex = {};
@@ -121,25 +115,17 @@
                 return { tailwind: mapTailwind, hex: mapHex };
             }, [selectedProjects]);
 
-            // Função para calcular a soma otimizada de todos os projetos juntos
             const calculateGlobalOptimization = () => {
                 if (selectedProjects.length === 0) return;
-
                 let groupedCuts = {};
                 
-                // Juntar todas as peças de todos os projetos selecionados
                 selectedProjects.forEach(pName => {
                     const proj = savedProjects[pName];
                     if (proj && proj.cutList) {
                         proj.cutList.forEach(item => {
                             if (!groupedCuts[item.profile]) groupedCuts[item.profile] = [];
-                            
                             for (let i = 0; i < item.quantity; i++) {
-                                // Guardamos o tamanho E a origem do projeto
-                                groupedCuts[item.profile].push({
-                                    length: item.length,
-                                    project: pName
-                                });
+                                groupedCuts[item.profile].push({ length: item.length, project: pName });
                             }
                         });
                     }
@@ -148,18 +134,14 @@
                 let allBins = [];
                 let blade = parseFloat(globalBladeWidth) || 0;
 
-                // Processar a otimização por perfil
                 for (const [profile, cuts] of Object.entries(groupedCuts)) {
-                    // Ordenar da maior peça para a menor (First Fit Decreasing) independente do projeto
                     cuts.sort((a, b) => b.length - a.length);
-                    
                     let bins = [];
 
                     cuts.forEach(cutObj => {
                         let placed = false;
                         for (let i = 0; i < bins.length; i++) {
                             const spaceNeeded = bins[i].cuts.length > 0 ? cutObj.length + blade : cutObj.length;
-                            
                             if (bins[i].remaining >= spaceNeeded) {
                                 bins[i].cuts.push(cutObj);
                                 bins[i].remaining -= spaceNeeded;
@@ -169,25 +151,17 @@
                         }
 
                         if (!placed) {
-                            bins.push({
-                                id: bins.length + 1,
-                                profile: profile,
-                                cuts: [cutObj],
-                                remaining: globalStandardLength - cutObj.length
-                            });
+                            bins.push({ id: bins.length + 1, profile: profile, cuts: [cutObj], remaining: globalStandardLength - cutObj.length });
                         }
                     });
                     
                     allBins = [...allBins, ...bins];
                 }
-
                 setCombinedResults(allBins);
             };
 
-            // Calcular estatísticas a partir dos resultados globais
             const stats = useMemo(() => {
                 if (!combinedResults) return null;
-                
                 const totalBars = combinedResults.length;
                 const totalMaterial = totalBars * globalStandardLength;
                 let totalPieces = 0;
@@ -203,32 +177,22 @@
                 return { totalBars, totalPieces, totalWaste, efficiency };
             }, [combinedResults, globalStandardLength]);
 
-            // Exportar o Plano Combinado para Excel
             const exportSummaryToExcel = () => {
                 if (!combinedResults || combinedResults.length === 0) return;
-
                 const wb = XLSX.utils.book_new();
                 const aoa = [];
                 const merges = [];
                 let rowIndex = 0;
-                
                 const wasteColor = "E2E8F0"; 
 
-                // Cabeçalho Principal
-                aoa.push([{ 
-                    v: "PLANO GLOBAL OTIMIZADO (MÚLTIPLOS PROJETOS)", 
-                    s: { font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, alignment: { horizontal: "center", vertical: "center" } } 
-                }]);
+                aoa.push([{ v: "PLANO GLOBAL OTIMIZADO (MÚLTIPLOS PROJETOS)", s: { font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, alignment: { horizontal: "center", vertical: "center" } } }]);
                 merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 100 } });
                 rowIndex++;
                 
-                // Legenda de Projetos no Excel
                 aoa.push(["LEGENDA DE PROJETOS"]);
                 rowIndex++;
                 selectedProjects.forEach(p => {
-                    aoa.push([
-                        { v: p, s: { font: { bold: true, color: { rgb: "FFFFFF"} }, fill: { fgColor: { rgb: colorMap.hex[p] } } } }
-                    ]);
+                    aoa.push([{ v: p, s: { font: { bold: true, color: { rgb: "FFFFFF"} }, fill: { fgColor: { rgb: colorMap.hex[p] } } } }]);
                     rowIndex++;
                 });
                 
@@ -242,10 +206,7 @@
                 }, {});
 
                 for (const [profile, bins] of Object.entries(grouped)) {
-                    aoa.push([{ 
-                        v: `Modelo: ${profile} (${bins.length} barras)`, 
-                        s: { font: { bold: true, sz: 14, color: { rgb: "1E293B" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } } 
-                    }]);
+                    aoa.push([{ v: `Modelo: ${profile} (${bins.length} barras)`, s: { font: { bold: true, sz: 14, color: { rgb: "1E293B" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } } }]);
                     merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 100 } });
                     rowIndex++;
 
@@ -254,7 +215,6 @@
                         row[0] = { v: `Barra #${bin.id}`, s: { font: { bold: true }, alignment: { vertical: "center" } } };
 
                         let currentPct = 0;
-                        
                         bin.cuts.forEach((cutObj) => {
                             let pct = Math.round((cutObj.length / globalStandardLength) * 100);
                             if (pct === 0 && cutObj.length > 0) pct = 1; 
@@ -265,23 +225,9 @@
                                 const colEnd = colStart + pct - 1;
                                 const bgColor = colorMap.hex[cutObj.project];
 
-                                row[colStart] = {
-                                    v: `${cutObj.length}mm`,
-                                    s: {
-                                        fill: { fgColor: { rgb: bgColor } },
-                                        font: { color: { rgb: "FFFFFF" }, bold: true, sz: 10 },
-                                        alignment: { horizontal: "center", vertical: "center" }
-                                    }
-                                };
-
-                                if (colStart !== colEnd) {
-                                    merges.push({ s: { r: rowIndex, c: colStart }, e: { r: rowIndex, c: colEnd } });
-                                }
-
-                                for (let i = colStart + 1; i <= colEnd; i++) {
-                                    row[i] = { v: "", s: { fill: { fgColor: { rgb: bgColor } } } };
-                                }
-
+                                row[colStart] = { v: `${cutObj.length}mm`, s: { fill: { fgColor: { rgb: bgColor } }, font: { color: { rgb: "FFFFFF" }, bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center" } } };
+                                if (colStart !== colEnd) merges.push({ s: { r: rowIndex, c: colStart }, e: { r: rowIndex, c: colEnd } });
+                                for (let i = colStart + 1; i <= colEnd; i++) row[i] = { v: "", s: { fill: { fgColor: { rgb: bgColor } } } };
                                 currentPct += pct;
                             }
                         });
@@ -290,28 +236,13 @@
                         if (wastePct > 0) {
                             const colStart = 1 + currentPct;
                             const colEnd = colStart + wastePct - 1;
-
-                            row[colStart] = {
-                                v: `Sobra: ${bin.remaining.toFixed(1)}mm`,
-                                s: {
-                                    fill: { fgColor: { rgb: wasteColor } },
-                                    font: { color: { rgb: "64748B" }, italic: true, sz: 10 },
-                                    alignment: { horizontal: "center", vertical: "center" }
-                                }
-                            };
-
-                            if (colStart !== colEnd) {
-                                merges.push({ s: { r: rowIndex, c: colStart }, e: { r: rowIndex, c: colEnd } });
-                            }
-                            
-                            for (let i = colStart + 1; i <= colEnd; i++) {
-                                row[i] = { v: "", s: { fill: { fgColor: { rgb: wasteColor } } } };
-                            }
+                            row[colStart] = { v: `Sobra: ${bin.remaining.toFixed(1)}mm`, s: { fill: { fgColor: { rgb: wasteColor } }, font: { color: { rgb: "64748B" }, italic: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center" } } };
+                            if (colStart !== colEnd) merges.push({ s: { r: rowIndex, c: colStart }, e: { r: rowIndex, c: colEnd } });
+                            for (let i = colStart + 1; i <= colEnd; i++) row[i] = { v: "", s: { fill: { fgColor: { rgb: wasteColor } } } };
                         }
 
                         aoa.push(row);
                         rowIndex++;
-                        
                         aoa.push(new Array(101).fill(""));
                         rowIndex++;
                     });
@@ -322,91 +253,82 @@
 
                 const ws = XLSX.utils.aoa_to_sheet(aoa);
                 ws['!merges'] = merges;
-                
                 const cols = [{ wch: 15 }];
-                for(let i=0; i<100; i++) {
-                    cols.push({ wch: 1.5 });
-                }
+                for(let i=0; i<100; i++) cols.push({ wch: 1.5 });
                 ws['!cols'] = cols;
 
                 XLSX.utils.book_append_sheet(wb, ws, "Plano Combinado");
-                
                 const dataAtual = new Date().toISOString().split('T')[0];
                 XLSX.writeFile(wb, `Plano_Global_Otimizado_${dataAtual}.xlsx`);
             };
 
             const hasProjects = Object.keys(savedProjects).length > 0;
+            const wasteBgUrl = isDark
+                ? "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik0wIDQwbDQwLTQwTTAgODBMODAgME00MCA4MGw0MC00MCIvPjwvZz48L3N2Zz4=')"
+                : "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik0wIDQwbDQwLTQwTTAgODBMODAgME00MCA4MGw0MC00MCIvPjwvZz48L3N2Zz4=')";
 
             return (
-                <div className="min-h-screen bg-slate-900 p-4 md:p-8 font-sans text-slate-200">
+                <div className="min-h-screen p-4 md:p-8 font-sans">
                     <div className="max-w-5xl mx-auto">
                         
-                        {/* Cabeçalho Superior */}
-                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-md border border-slate-700 gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm dark:shadow-md border border-slate-200 dark:border-slate-700 gap-4 transition-colors duration-300">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center shadow-inner">
                                     <Icon name="calculator" className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-xl font-bold text-slate-100 leading-tight">Somador & Otimizador Global</h1>
-                                    <p className="text-xs text-slate-400">Misture vários projetos na mesma barra para poupar material</p>
+                                    <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Somador & Otimizador Global</h1>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Misture vários projetos na mesma barra para poupar material</p>
                                 </div>
                             </div>
-                            <a 
-                                href="index.html" 
-                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-slate-600 w-full sm:w-auto justify-center"
-                            >
-                                <Icon name="scissors" className="w-4 h-4" />
-                                Voltar ao Otimizador
-                            </a>
+                            <div className="flex gap-3 w-full sm:w-auto flex-col sm:flex-row">
+                                <button 
+                                    onClick={() => setIsDark(!isDark)} 
+                                    className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-slate-300 dark:border-slate-600 w-full sm:w-auto justify-center shadow-sm"
+                                    title="Alternar Tema"
+                                >
+                                    {isDark ? <Icon name="sun" className="w-4 h-4" /> : <Icon name="moon" className="w-4 h-4" />}
+                                    <span className="hidden sm:inline">{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
+                                </button>
+                                <a href="index.html" className="bg-white hover:bg-slate-50 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-slate-300 dark:border-slate-600 w-full sm:w-auto justify-center shadow-sm">
+                                    <Icon name="scissors" className="w-4 h-4" /> Voltar ao Otimizador
+                                </a>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            
-                            {/* Painel Esquerdo - Seleção e Configuração */}
                             <div className="lg:col-span-1 space-y-6">
-                                
-                                {/* Configuração Global */}
-                                <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-5">
-                                    <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-slate-100">
-                                        <Icon name="settings" className="w-5 h-5 text-slate-400" />
-                                        Configuração Geral
-                                    </h2>
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors duration-300">
+                                    <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-slate-900 dark:text-slate-100"><Icon name="settings" className="w-5 h-5 text-slate-400" /> Configuração Geral</h2>
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-400 mb-1">Tamanho da Barra (mm)</label>
-                                            <input type="number" value={globalStandardLength} onChange={(e) => { setGlobalStandardLength(Number(e.target.value)); setCombinedResults(null); }} className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-100" />
-                                            <p className="text-xs text-slate-500 mt-1">Este tamanho será aplicado a todos os projetos somados.</p>
+                                            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Tamanho da Barra (mm)</label>
+                                            <input type="number" value={globalStandardLength} onChange={(e) => { setGlobalStandardLength(Number(e.target.value)); setCombinedResults(null); }} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:bg-white dark:focus:bg-slate-900 outline-none text-slate-900 dark:text-slate-100 transition-colors" />
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Este tamanho será aplicado a todos os projetos somados.</p>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-400 mb-1">Espessura Lâmina (mm)</label>
-                                            <input type="number" min="0" step="0.1" value={globalBladeWidth} onChange={(e) => { setGlobalBladeWidth(Number(e.target.value)); setCombinedResults(null); }} className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-100" />
+                                            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Espessura Lâmina (mm)</label>
+                                            <input type="number" min="0" step="0.1" value={globalBladeWidth} onChange={(e) => { setGlobalBladeWidth(Number(e.target.value)); setCombinedResults(null); }} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:bg-white dark:focus:bg-slate-900 outline-none text-slate-900 dark:text-slate-100 transition-colors" />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Seleção de Projetos */}
-                                <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-5 flex flex-col max-h-[500px]">
-                                    <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-700">
-                                        <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-100">
-                                            <Icon name="layers" className="w-5 h-5 text-amber-500" />
-                                            Escolher Projetos
-                                        </h2>
-                                        <span className="text-xs bg-slate-700 px-2 py-1 rounded-full font-medium">
-                                            {selectedProjects.length}
-                                        </span>
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex flex-col max-h-[500px] transition-colors duration-300">
+                                    <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                                        <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-100"><Icon name="layers" className="w-5 h-5 text-amber-500" /> Escolher Projetos</h2>
+                                        <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 border border-slate-200 dark:border-slate-600 rounded-full font-medium text-slate-600 dark:text-slate-300">{selectedProjects.length}</span>
                                     </div>
 
                                     {!hasProjects ? (
                                         <div className="flex flex-col items-center justify-center p-6 text-center opacity-70">
-                                            <Icon name="alert-circle" className="w-8 h-8 text-slate-500 mb-2" />
-                                            <p className="text-sm text-slate-400">Ainda não tem projetos guardados no Otimizador.</p>
+                                            <Icon name="alert-circle" className="w-8 h-8 text-slate-400 dark:text-slate-500 mb-2" />
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">Ainda não tem projetos guardados no Otimizador.</p>
                                         </div>
                                     ) : (
                                         <>
                                             <div className="flex gap-2 mb-3">
-                                                <button onClick={selectAll} className="flex-1 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 rounded transition-colors text-slate-300">Todos</button>
-                                                <button onClick={deselectAll} className="flex-1 py-1.5 text-xs font-medium bg-slate-700 hover:bg-slate-600 rounded transition-colors text-slate-300">Limpar</button>
+                                                <button onClick={selectAll} className="flex-1 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded transition-colors text-slate-700 dark:text-slate-300">Todos</button>
+                                                <button onClick={deselectAll} className="flex-1 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded transition-colors text-slate-700 dark:text-slate-300">Limpar</button>
                                             </div>
 
                                             <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
@@ -416,21 +338,13 @@
                                                     const isCalculable = proj.cutList && proj.cutList.length > 0;
 
                                                     return (
-                                                        <div 
-                                                            key={name}
-                                                            onClick={() => isCalculable && toggleSelect(name)}
-                                                            className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3
-                                                                ${!isCalculable ? 'border-slate-800 opacity-50 cursor-not-allowed' : 
-                                                                  isSelected ? 'bg-amber-900/20 border-amber-600' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}
-                                                        >
-                                                            <div className={`flex-shrink-0 ${isSelected ? 'text-amber-500' : 'text-slate-500'}`}>
-                                                                <Icon name={isSelected ? 'check-square' : 'square'} className="w-5 h-5" />
-                                                            </div>
+                                                        <div key={name} onClick={() => isCalculable && toggleSelect(name)} className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3
+                                                                ${!isCalculable ? 'border-slate-200 dark:border-slate-800 opacity-50 cursor-not-allowed' : 
+                                                                  isSelected ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 dark:border-amber-600' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500'}`}>
+                                                            <div className={`flex-shrink-0 ${isSelected ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}><Icon name={isSelected ? 'check-square' : 'square'} className="w-5 h-5" /></div>
                                                             <div className="flex-1 overflow-hidden">
-                                                                <p className="font-semibold text-slate-200 truncate" title={name}>{name}</p>
-                                                                <p className="text-xs text-slate-400">
-                                                                    {!isCalculable ? 'Vazio' : `${proj.cutList.length} peça(s)`}
-                                                                </p>
+                                                                <p className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={name}>{name}</p>
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400">{!isCalculable ? 'Vazio' : `${proj.cutList.length} peça(s)`}</p>
                                                             </div>
                                                         </div>
                                                     )
@@ -438,140 +352,68 @@
                                             </div>
                                         </>
                                     )}
-
-                                    <button 
-                                        onClick={calculateGlobalOptimization}
-                                        disabled={selectedProjects.length === 0}
-                                        className="mt-4 w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium py-2.5 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors"
-                                    >
-                                        <Icon name="refresh" className="w-4 h-4" />
-                                        Calcular Otimização Global
-                                    </button>
+                                    <button onClick={calculateGlobalOptimization} disabled={selectedProjects.length === 0} className="mt-4 w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium py-2.5 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors shadow-sm"><Icon name="refresh" className="w-4 h-4" /> Calcular Otimização Global</button>
                                 </div>
                             </div>
 
-                            {/* Painel Direito - Resultados Agregados e Otimizados */}
                             <div className="lg:col-span-2 space-y-6">
-                                
                                 {!combinedResults ? (
-                                    <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-8 h-full flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
-                                        <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center">
-                                            <Icon name="calculator" className="w-10 h-10 text-slate-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-medium text-slate-200 mb-1">Pronto para Otimizar</h3>
-                                            <p className="text-slate-400 text-sm">Selecione os projetos à esquerda e clique em Calcular Otimização Global.</p>
-                                        </div>
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 h-full flex flex-col items-center justify-center text-center space-y-4 min-h-[400px] transition-colors duration-300">
+                                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center border border-slate-100 dark:border-slate-800"><Icon name="calculator" className="w-10 h-10 text-slate-300 dark:text-slate-600" /></div>
+                                        <div><h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1">Pronto para Otimizar</h3><p className="text-slate-500 dark:text-slate-400 text-sm">Selecione os projetos à esquerda e clique em Calcular Otimização Global.</p></div>
                                     </div>
                                 ) : (
                                     <>
-                                        {/* Botão Exportar e Título */}
-                                        <div className="flex justify-between items-center bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700">
-                                            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                                                <Icon name="layers" className="w-5 h-5 text-amber-500" />
-                                                Plano Global ({selectedProjects.length} projetos)
-                                            </h2>
-                                            <button 
-                                                onClick={exportSummaryToExcel}
-                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-                                            >
-                                                <Icon name="excel" className="w-5 h-5" />
-                                                Exportar
-                                            </button>
+                                        <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+                                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><Icon name="layers" className="w-5 h-5 text-amber-500" /> Plano Global ({selectedProjects.length} projetos)</h2>
+                                            <button onClick={exportSummaryToExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors shadow-sm"><Icon name="excel" className="w-5 h-5" /> Exportar</button>
                                         </div>
 
-                                        {/* Cards de Estatísticas Globais */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col justify-center items-center text-center">
-                                                <span className="text-slate-400 text-xs uppercase tracking-wider mb-1">Total de Barras</span>
-                                                <span className="text-3xl font-bold text-slate-100">{stats.totalBars}</span>
-                                            </div>
-                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col justify-center items-center text-center">
-                                                <span className="text-slate-400 text-xs uppercase tracking-wider mb-1">Peças P/ Cortar</span>
-                                                <span className="text-3xl font-bold text-blue-400">{stats.totalPieces}</span>
-                                            </div>
-                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col justify-center items-center text-center">
-                                                <span className="text-slate-400 text-xs uppercase tracking-wider mb-1">Aproveitamento</span>
-                                                <span className="text-3xl font-bold text-emerald-400">{stats.efficiency}%</span>
-                                            </div>
-                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col justify-center items-center text-center">
-                                                <span className="text-slate-400 text-xs uppercase tracking-wider mb-1">Sobra Restante</span>
-                                                <span className="text-2xl font-bold text-rose-400">{stats.totalWaste.toFixed(0)}<span className="text-sm">mm</span></span>
-                                            </div>
+                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center items-center text-center transition-colors duration-300"><span className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1">Total de Barras</span><span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stats.totalBars}</span></div>
+                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center items-center text-center transition-colors duration-300"><span className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1">Peças P/ Cortar</span><span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.totalPieces}</span></div>
+                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center items-center text-center transition-colors duration-300"><span className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1">Aproveitamento</span><span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{stats.efficiency}%</span></div>
+                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center items-center text-center transition-colors duration-300"><span className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mb-1">Sobra Restante</span><span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.totalWaste.toFixed(0)}<span className="text-sm">mm</span></span></div>
                                         </div>
 
-                                        {/* Representação Visual Combinada */}
-                                        <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 overflow-hidden">
-                                            <div className="p-5 border-b border-slate-700 bg-slate-800/50">
-                                                <h2 className="text-lg font-semibold text-slate-100 mb-3">Legenda de Projetos</h2>
-                                                {/* LEGENDA DE CORES */}
+                                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors duration-300">
+                                            <div className="p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Legenda de Projetos</h2>
                                                 <div className="flex flex-wrap gap-4">
                                                     {selectedProjects.map(p => (
-                                                        <div key={p} className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">
+                                                        <div key={p} className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                                                             <div className={`w-4 h-4 rounded-full ${colorMap.tailwind[p]}`}></div>
-                                                            <span className="text-sm font-medium text-slate-200">{p}</span>
+                                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{p}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                             
                                             <div className="p-5 space-y-8">
-                                                {Object.entries(
-                                                    combinedResults.reduce((acc, bin) => {
-                                                        if (!acc[bin.profile]) acc[bin.profile] = [];
-                                                        acc[bin.profile].push(bin);
-                                                        return acc;
-                                                    }, {})
-                                                ).map(([profile, profileBins]) => (
+                                                {Object.entries(combinedResults.reduce((acc, bin) => { if (!acc[bin.profile]) acc[bin.profile] = []; acc[bin.profile].push(bin); return acc; }, {})).map(([profile, profileBins]) => (
                                                     <div key={profile} className="space-y-3">
-                                                        <h3 className="font-bold text-slate-200 flex items-center gap-2 border-b border-slate-700 pb-2">
-                                                            <Icon name="tag" className="w-4 h-4 text-amber-500" />
-                                                            Canaleta Modelo: {profile}
-                                                            <span className="text-xs font-normal text-slate-400 bg-slate-700 px-2 py-0.5 rounded-full ml-auto">
-                                                                {profileBins.length} barra(s)
-                                                            </span>
+                                                        <h3 className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                                            <Icon name="tag" className="w-4 h-4 text-amber-500" /> Canaleta Modelo: {profile}
+                                                            <span className="text-xs font-normal text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full ml-auto">{profileBins.length} barra(s)</span>
                                                         </h3>
-                                                        
-                                                        <div className="divide-y divide-slate-700 border border-slate-700 rounded-lg">
+                                                        <div className="divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg">
                                                             {profileBins.map((bin, index) => (
-                                                                <div key={index} className="p-4 hover:bg-slate-700/30 transition-colors">
+                                                                <div key={index} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                                                     <div className="flex justify-between items-end mb-3">
-                                                                        <h4 className="font-semibold text-slate-200">Barra #{bin.id}</h4>
-                                                                        <span className="text-sm text-slate-400">
-                                                                            Sobra: <span className="font-medium text-rose-400">{bin.remaining.toFixed(1)}mm</span>
-                                                                        </span>
+                                                                        <h4 className="font-semibold text-slate-900 dark:text-slate-200">Barra #{bin.id}</h4>
+                                                                        <span className="text-sm text-slate-500 dark:text-slate-400">Sobra: <span className="font-medium text-rose-600 dark:text-rose-400">{bin.remaining.toFixed(1)}mm</span></span>
                                                                     </div>
-                                                                    
-                                                                    {/* Representação Visual da Barra com Cores por Projeto */}
-                                                                    <div className="h-12 w-full bg-slate-900 rounded-md overflow-hidden flex relative shadow-inner mb-3 border border-slate-700">
+                                                                    <div className="h-12 w-full bg-slate-100 dark:bg-slate-900 rounded-md overflow-hidden flex relative shadow-inner mb-3 border border-slate-300 dark:border-slate-700">
                                                                         {bin.cuts.map((cutObj, cutIdx) => {
                                                                             const percentage = (cutObj.length / globalStandardLength) * 100;
                                                                             const colorClass = colorMap.tailwind[cutObj.project];
-                                                                            
-                                                                            return (
-                                                                                <div
-                                                                                    key={cutIdx}
-                                                                                    style={{ width: `${percentage}%` }}
-                                                                                    className={`h-full ${colorClass} border-r border-slate-800 flex flex-col items-center justify-center text-white font-medium overflow-hidden whitespace-nowrap px-1 transition-all hover:opacity-80`}
-                                                                                    title={`Medida: ${cutObj.length}mm\nProjeto: ${cutObj.project}`}
-                                                                                >
-                                                                                    {percentage > 4 && <span className="text-xs font-bold leading-tight">{cutObj.length}</span>}
-                                                                                </div>
-                                                                            );
+                                                                            return (<div key={cutIdx} style={{ width: `${percentage}%` }} className={`h-full ${colorClass} border-r border-white/30 dark:border-slate-800 flex flex-col items-center justify-center text-white font-medium overflow-hidden whitespace-nowrap px-1 transition-all hover:opacity-80`} title={`Medida: ${cutObj.length}mm\nProjeto: ${cutObj.project}`}>{percentage > 4 && <span className="text-xs font-bold leading-tight">{cutObj.length}</span>}</div>);
                                                                         })}
-                                                                        {/* Área de sobra visual para tema escuro */}
-                                                                        <div 
-                                                                            className="h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik0wIDQwbDQwLTQwTTAgODBMODAgME00MCA4MGw0MC00MCIvPjwvZz48L3N2Zz4=')] opacity-50 flex-1"
-                                                                        />
+                                                                        <div className="h-full opacity-50 flex-1" style={{ backgroundImage: wasteBgUrl }} />
                                                                     </div>
-
                                                                     <div className="flex flex-wrap gap-2 text-sm mt-4">
-                                                                        <span className="text-slate-400">Ordem de Corte:</span>
-                                                                        {bin.cuts.map((cutObj, cutIdx) => (
-                                                                            <span key={cutIdx} className={`px-2 py-0.5 rounded font-medium text-slate-100 border border-slate-600 shadow-sm ${colorMap.tailwind[cutObj.project]}`}>
-                                                                                {cutObj.length}mm
-                                                                            </span>
-                                                                        ))}
+                                                                        <span className="text-slate-500 dark:text-slate-400">Ordem de Corte:</span>
+                                                                        {bin.cuts.map((cutObj, cutIdx) => <span key={cutIdx} className={`px-2 py-0.5 rounded font-medium text-white shadow-sm ${colorMap.tailwind[cutObj.project]}`}>{cutObj.length}mm</span>)}
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -583,6 +425,13 @@
                                     </>
                                 )}
                             </div>
+                        </div>
+
+                        {/* --- BOTÃO DE MUDAR TEMA (FUNDO) --- */}
+                        <div className="mt-12 mb-4 flex justify-center border-t border-slate-200 dark:border-slate-700 pt-8">
+                            <button onClick={() => setIsDark(!isDark)} className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm font-medium">
+                                {isDark ? <Icon name="sun" className="w-5 h-5" /> : <Icon name="moon" className="w-5 h-5" />} {isDark ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
+                            </button>
                         </div>
                     </div>
                 </div>
