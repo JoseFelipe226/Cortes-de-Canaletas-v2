@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otimizador de Cortes</title>
+    
+    <!-- Favicon Embutido (Ícone da Aba) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2I4MmY2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iNiIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSI2IiBjeT0iMTgiIHI9IjMiLz48bGluZSB4MT0iMjAiIHkxPSI0IiB4Mj0iOC4xMiIgeTI9IjE1Ljg4Ii8+PGxpbmUgeDE9IjE0LjQ3IiB5MT0iMTQuNDgiIHgyPSIyMCIgeTI9IjIwIi8+PGxpbmUgeDE9IjguMTIiIHkxPSI4LjEyIiB4Mj0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==">
+    
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM (via CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para compilar JSX no navegador) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- xlsx-js-style (Biblioteca avançada para gerar Excel com cores e gráficos embutidos) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // Ícones embutidos nativamente para evitar conflitos no DOM com o React
+        const Icons = {
+            'settings-2': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg>,
+            'ruler': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.3 15.3l-7.6-7.6C12.5 6.5 10.5 6 9 7L4 12c-1.5 1.5-1 3.5.2 4.7l7.6 7.6c1.2 1.2 3.2 1.7 4.7.2l5-5c1.5-1.5 2-3.5.8-4.7Z"/><path d="M14.5 12.5l-2-2"/><path d="M11.5 9.5l-2-2"/><path d="M8.5 6.5l-2-2"/><path d="M17.5 15.5l-2-2"/></svg>,
+            'tag': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>,
+            'alert-circle': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+            'plus': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            'trash-2': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+            'refresh-cw': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+            'scissors': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
+            'excel': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>,
+            'file-text': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>,
+            'external-link': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+            'save': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
+            'folder': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>,
+            'check-circle': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+            'calculator': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+        };
+
+        const Icon = ({ name, className }) => {
+            const renderIcon = Icons[name];
+            return renderIcon ? renderIcon(className) : null;
+        };
+
+        const FIXED_PROFILES = [
+            "HDP2 30X30", "HDP3 30X50", "HDP4 50X50", "HDP5 80X50",
+            "HDP6 110X50", "HDP7 150X50", "HDP8 30X80", "HDP9 50X80",
+            "HDP10 80X80", "HDP11 60X50", "HDP12 110X80", "HDP14 40X70",
+            "HDP15 70X70", "HDP16 40X60", "Trilho de Cobre 7,5",
+            "Trilho de Cobre 15", "Trilho Galvanizado 7,5", "Trilho Galvanizado 15"
+        ];
+
+        function App() {
+            // Estado do Modal de Confirmação
+            const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
+            // Notificação rápida na tela
+            const [notification, setNotification] = useState('');
+
+            // --- ESTADOS GLOBAIS DE PROJETOS SALVOS ---
+            const [savedProjects, setSavedProjects] = useState(() => {
+                const saved = localStorage.getItem('opt_savedProjects');
+                return saved ? JSON.parse(saved) : {};
+            });
+
+            // Inicializar estados a partir do localStorage (se existirem)
+            const [planName, setPlanName] = useState(() => {
+                const saved = localStorage.getItem('opt_planName');
+                return saved !== null ? saved : 'Novo Projeto';
+            });
+
+            const [standardLength, setStandardLength] = useState(() => {
+                const saved = localStorage.getItem('opt_standardLength');
+                return saved !== null ? Number(saved) : 2000;
+            });
+
+            const [bladeWidth, setBladeWidth] = useState(() => {
+                const saved = localStorage.getItem('opt_bladeWidth');
+                return saved !== null ? Number(saved) : 0;
+            });
+
+            const [cutList, setCutList] = useState(() => {
+                const saved = localStorage.getItem('opt_cutList');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            const [results, setResults] = useState(() => {
+                const saved = localStorage.getItem('opt_results');
+                return saved ? JSON.parse(saved) : null;
+            });
+
+            // Estado dos inputs
+            const [currentProfile, setCurrentProfile] = useState(FIXED_PROFILES[0]);
+            const [currentLength, setCurrentLength] = useState('');
+            const [error, setError] = useState('');
+
+            // Salvar automaticamente
+            useEffect(() => {
+                localStorage.setItem('opt_planName', planName);
+            }, [planName]);
+
+            useEffect(() => {
+                localStorage.setItem('opt_standardLength', standardLength);
+            }, [standardLength]);
+
+            useEffect(() => {
+                localStorage.setItem('opt_bladeWidth', bladeWidth);
+            }, [bladeWidth]);
+
+            useEffect(() => {
+                localStorage.setItem('opt_cutList', JSON.stringify(cutList));
+            }, [cutList]);
+
+            useEffect(() => {
+                if (results) {
+                    localStorage.setItem('opt_results', JSON.stringify(results));
+                } else {
+                    localStorage.removeItem('opt_results');
+                }
+            }, [results]);
+
+            useEffect(() => { 
+                localStorage.setItem('opt_savedProjects', JSON.stringify(savedProjects)); 
+            }, [savedProjects]);
+
+            // --- FUNÇÕES DE INTERFACE (Modals e Notificações) ---
+            const openConfirm = (title, message, onConfirm, isDanger = false) => {
+                setModalConfig({ isOpen: true, title, message, onConfirm, isDanger });
+            };
+            const closeConfirm = () => {
+                setModalConfig({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
+            };
+            const showNotification = (msg) => {
+                setNotification(msg);
+                setTimeout(() => setNotification(''), 4000);
+            };
+
+            // --- GESTÃO DE PROJETOS ---
+            const handleSaveProject = () => {
+                const nameToSave = planName.trim();
+                if (!nameToSave) {
+                    setError('Dê um nome ao projeto antes de salvar.');
+                    return;
+                }
+                
+                const newProjectData = {
+                    standardLength,
+                    bladeWidth,
+                    cutList,
+                    results,
+                    lastSaved: new Date().toISOString()
+                };
+
+                setSavedProjects(prev => ({
+                    ...prev,
+                    [nameToSave]: newProjectData
+                }));
+                showNotification(`Projeto "${nameToSave}" guardado com sucesso!`);
+                setError('');
+            };
+
+            const handleLoadProject = (e) => {
+                const name = e.target.value;
+                if (!name) return;
+                
+                openConfirm(
+                    "Carregar Projeto", 
+                    `Tem a certeza que deseja carregar o projeto "${name}"? O seu trabalho atual (se não foi salvo) será perdido.`, 
+                    () => {
+                        const proj = savedProjects[name];
+                        setPlanName(name);
+                        setStandardLength(proj.standardLength);
+                        setBladeWidth(proj.bladeWidth);
+                        setCutList(proj.cutList);
+                        setResults(proj.results || null);
+                        showNotification(`Projeto "${name}" carregado.`);
+                    }
+                );
+                e.target.value = ""; // Resetar o select após a escolha
+            };
+
+            const handleDeleteProject = () => {
+                if (!savedProjects[planName]) return;
+                
+                openConfirm(
+                    "Eliminar Projeto", 
+                    `Tem a certeza absoluta que deseja apagar o projeto "${planName}" dos registos guardados? Esta ação não pode ser desfeita.`, 
+                    () => {
+                        const newSaved = { ...savedProjects };
+                        delete newSaved[planName];
+                        setSavedProjects(newSaved);
+                        showNotification(`Projeto apagado.`);
+                    },
+                    true // Botão de perigo
+                );
+            };
+
+            const handleAddCut = (e) => {
+                e.preventDefault();
+                setError('');
+
+                const length = parseFloat(currentLength);
+
+                if (isNaN(length) || length <= 0) {
+                    setError('O tamanho da peça deve ser maior que zero.');
+                    return;
+                }
+                if (length > standardLength) {
+                    setError(`O tamanho não pode ser maior que a barra original (${standardLength}mm).`);
+                    return;
+                }
+
+                const profileName = currentProfile;
+
+                const newItem = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    length,
+                    quantity: 1, 
+                    profile: profileName
+                };
+
+                setCutList([...cutList, newItem]);
+                setCurrentLength('');
+                setResults(null);
+            };
+
+            const handleRemoveCut = (id) => {
+                setCutList(cutList.filter(item => item.id !== id));
+                setResults(null);
+            };
+
+            const calculateOptimization = () => {
+                if (cutList.length === 0) return;
+
+                let groupedCuts = {};
+                cutList.forEach(item => {
+                    if (!groupedCuts[item.profile]) groupedCuts[item.profile] = [];
+                    for (let i = 0; i < item.quantity; i++) {
+                        groupedCuts[item.profile].push(item.length);
+                    }
+                });
+
+                let allBins = [];
+                let blade = parseFloat(bladeWidth) || 0;
+
+                for (const [profile, cuts] of Object.entries(groupedCuts)) {
+                    cuts.sort((a, b) => b - a);
+                    let bins = [];
+
+                    cuts.forEach(cut => {
+                        let placed = false;
+                        for (let i = 0; i < bins.length; i++) {
+                            const spaceNeeded = bins[i].cuts.length > 0 ? cut + blade : cut;
+                            if (bins[i].remaining >= spaceNeeded) {
+                                bins[i].cuts.push(cut);
+                                bins[i].remaining -= spaceNeeded;
+                                placed = true;
+                                break;
+                            }
+                        }
+
+                        if (!placed) {
+                            bins.push({
+                                id: bins.length + 1,
+                                profile: profile,
+                                cuts: [cut],
+                                remaining: standardLength - cut
+                            });
+                        }
+                    });
+                    allBins = [...allBins, ...bins];
+                }
+                setResults(allBins);
+            };
+
+            const clearAll = () => {
+                openConfirm(
+                    "Limpar Lista",
+                    "Tem a certeza que deseja limpar toda a lista atual de peças? Isto não apagará o projeto salvo, apenas limpará o ecrã atual.",
+                    () => {
+                        setCutList([]);
+                        setResults(null);
+                        setError('');
+                    },
+                    true // Botão de perigo
+                );
+            };
+
+            const exportToExcelGraphic = () => {
+                if (!results) return;
+
+                const wb = XLSX.utils.book_new();
+                const aoa = [];
+                const merges = [];
+                let rowIndex = 0;
+
+                const cutColors = ["2563EB", "4F46E5", "0891B2", "0284C7"];
+                const wasteColor = "E2E8F0"; 
+                
+                const displayPlanName = planName.trim() || "Plano de Corte";
+                aoa.push([{ 
+                    v: displayPlanName, 
+                    s: { 
+                        font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } }, 
+                        fill: { fgColor: { rgb: "0F172A" } }, 
+                        alignment: { horizontal: "center", vertical: "center" } 
+                    } 
+                }]);
+                merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 100 } });
+                rowIndex++;
+                
+                aoa.push(new Array(101).fill(""));
+                rowIndex++;
+
+                const grouped = results.reduce((acc, bin) => {
+                    if (!acc[bin.profile]) acc[bin.profile] = [];
+                    acc[bin.profile].push(bin);
+                    return acc;
+                }, {});
+
+                for (const [profile, bins] of Object.entries(grouped)) {
+                    aoa.push([{ 
+                        v: `Modelo: ${profile} (${bins.length} barras)`, 
+                        s: { font: { bold: true, sz: 14, color: { rgb: "1E293B" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } } 
+                    }]);
+                    merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 100 } });
+                    rowIndex++;
+
+                    bins.forEach(bin => {
+                        const row = new Array(101).fill("");
+                        row[0] = { v: `Barra #${bin.id}`, s: { font: { bold: true }, alignment: { vertical: "center" } } };
+
+                        let currentPct = 0;
+                        
+                        bin.cuts.forEach((cut, cutIdx) => {
+                            let pct = Math.round((cut / standardLength) * 100);
+                            if (pct === 0 && cut > 0) pct = 1; 
+                            if (currentPct + pct > 100) pct = 100 - currentPct; 
+                            
+                            if (pct > 0) {
+                                const colStart = 1 + currentPct;
+                                const colEnd = colStart + pct - 1;
+                                const bgColor = cutColors[cutIdx % cutColors.length];
+
+                                row[colStart] = {
+                                    v: `${cut}mm`,
+                                    s: {
+                                        fill: { fgColor: { rgb: bgColor } },
+                                        font: { color: { rgb: "FFFFFF" }, bold: true, sz: 11 },
+                                        alignment: { horizontal: "center", vertical: "center" }
+                                    }
+                                };
+
+                                if (colStart !== colEnd) {
+                                    merges.push({ s: { r: rowIndex, c: colStart }, e: { r: rowIndex, c: colEnd } });
+                                }
+
+                                for (let i = colStart + 1; i <= colEnd; i++) {
+                                    row[i] = { v: "", s: { fill: { fgColor: { rgb: bgColor } } } };
+                                }
+
+                                currentPct += pct;
+                            }
+                        });
+
+                        const wastePct = 100 - currentPct;
+                        if (wastePct > 0) {
+                            const colStart = 1 + currentPct;
+                            const colEnd = colStart + wastePct - 1;
+
+                            row[colStart] = {
+                                v: `Sobra: ${bin.remaining.toFixed(1)}mm`,
+                                s: {
+                                    fill: { fgColor: { rgb: wasteColor } },
+                                    font: { color: { rgb: "64748B" }, italic: true, sz: 11 },
+                                    alignment: { horizontal: "center", vertical: "center" }
+                                }
+                            };
+
+                            if (colStart !== colEnd) {
+                                merges.push({ s: { r: rowIndex, c: colStart }, e: { r: rowIndex, c: colEnd } });
+                            }
+                            
+                            for (let i = colStart + 1; i <= colEnd; i++) {
+                                row[i] = { v: "", s: { fill: { fgColor: { rgb: wasteColor } } } };
+                            }
+                        }
+
+                        aoa.push(row);
+                        rowIndex++;
+                        
+                        aoa.push(new Array(101).fill(""));
+                        rowIndex++;
+                    });
+                    
+                    aoa.push(new Array(101).fill(""));
+                    rowIndex++;
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(aoa);
+                ws['!merges'] = merges;
+                
+                const cols = [{ wch: 15 }];
+                for(let i=0; i<100; i++) {
+                    cols.push({ wch: 1.5 });
+                }
+                ws['!cols'] = cols;
+
+                XLSX.utils.book_append_sheet(wb, ws, "Plano Gráfico");
+
+                const dateAtual = new Date().toISOString().split('T')[0];
+                const safeFileName = displayPlanName.replace(/[^a-z0-9]/gi, '_');
+                XLSX.writeFile(wb, `${safeFileName}_${dateAtual}.xlsx`);
+            };
+
+            const stats = useMemo(() => {
+                if (!results) return null;
+                const totalBars = results.length;
+                const totalMaterial = totalBars * standardLength;
+                const totalUsed = results.reduce((acc, bin) => acc + (standardLength - bin.remaining), 0);
+                const totalWaste = results.reduce((acc, bin) => acc + bin.remaining, 0);
+                const efficiency = ((totalUsed / totalMaterial) * 100).toFixed(1);
+                return { totalBars, totalWaste, efficiency };
+            }, [results, standardLength]);
+
+            return (
+                <div className="min-h-screen bg-slate-900 p-4 md:p-8 font-sans text-slate-200">
+
+                    {/* MODAL DE CONFIRMAÇÃO */}
+                    {modalConfig.isOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                            <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
+                                <h3 className="text-xl font-bold text-slate-100 mb-3 flex items-center gap-2">
+                                    <Icon name={modalConfig.isDanger ? 'alert-circle' : 'file-text'} className={`w-6 h-6 ${modalConfig.isDanger ? 'text-red-500' : 'text-blue-500'}`} />
+                                    {modalConfig.title}
+                                </h3>
+                                <p className="text-slate-300 mb-6 leading-relaxed text-sm">{modalConfig.message}</p>
+                                <div className="flex justify-end gap-3">
+                                    <button 
+                                        onClick={closeConfirm} 
+                                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors font-medium text-sm"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        onClick={() => { modalConfig.onConfirm(); closeConfirm(); }} 
+                                        className={`px-4 py-2.5 text-white rounded-lg transition-colors font-medium text-sm flex items-center gap-2 ${modalConfig.isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                    >
+                                        {modalConfig.isDanger ? 'Sim, eliminar' : 'Sim, continuar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-w-5xl mx-auto">
+                        
+                        {/* Cabeçalho Superior */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-md border border-slate-700 gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-inner">
+                                    <Icon name="scissors" className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-slate-100 leading-tight">Otimizador de Cortes</h1>
+                                    <p className="text-xs text-slate-400">Sistema de cálculo e plano de corte</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 w-full sm:w-auto flex-col sm:flex-row">
+                                <a 
+                                    href="dados.html" 
+                                    className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-slate-600 w-full justify-center"
+                                >
+                                    Dados
+                                    <Icon name="external-link" className="w-4 h-4" />
+                                </a>
+                                <a 
+                                    href="somador.html" 
+                                    className="bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-amber-500 w-full justify-center shadow-sm"
+                                >
+                                    Somador
+                                    <Icon name="calculator" className="w-4 h-4" />
+                                </a>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            {/* Painel Esquerdo */}
+                            <div className="lg:col-span-1 space-y-6">
+                                
+                                {/* Configuração */}
+                                <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-5">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-100">
+                                            <Icon name="settings-2" className="w-5 h-5 text-slate-400" />
+                                            Configuração
+                                        </h2>
+                                    </div>
+
+                                    {/* Notificação Temporária (Ex: Salvo com sucesso) */}
+                                    {notification && (
+                                        <div className="mb-4 bg-emerald-900/30 border border-emerald-800 text-emerald-400 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+                                            <Icon name="check-circle" className="w-4 h-4" />
+                                            {notification}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        {/* Gestão do Nome e Salvar */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-1 flex items-center gap-1">
+                                                <Icon name="file-text" className="w-3.5 h-3.5" />
+                                                Nome do Plano / Projeto
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input 
+                                                    type="text" 
+                                                    value={planName} 
+                                                    onChange={(e) => setPlanName(e.target.value)} 
+                                                    placeholder="Ex: Obra Hospitalar" 
+                                                    className="flex-1 w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-100 font-medium" 
+                                                />
+                                                <button 
+                                                    onClick={handleSaveProject}
+                                                    title="Guardar Projeto"
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 rounded-lg flex items-center justify-center transition-colors shadow-sm"
+                                                >
+                                                    <Icon name="save" className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Dropdown de Projetos Salvos */}
+                                        {Object.keys(savedProjects).length > 0 && (
+                                            <div className="pt-2 border-t border-slate-700">
+                                                <label className="block text-sm font-medium text-slate-400 mb-1 flex items-center gap-1">
+                                                    <Icon name="folder" className="w-3.5 h-3.5" />
+                                                    Projetos Guardados
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <select 
+                                                        onChange={handleLoadProject} 
+                                                        value=""
+                                                        className="flex-1 w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-100 text-sm"
+                                                    >
+                                                        <option value="" disabled>Carregar um projeto...</option>
+                                                        {Object.keys(savedProjects).map(name => (
+                                                            <option key={name} value={name}>{name}</option>
+                                                        ))}
+                                                    </select>
+                                                    {/* Botão de eliminar ativado apenas se o projeto atual estiver salvo */}
+                                                    {savedProjects[planName] && (
+                                                        <button 
+                                                            onClick={handleDeleteProject}
+                                                            title="Eliminar Projeto Atual"
+                                                            className="bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white px-3.5 rounded-lg flex items-center justify-center transition-colors border border-slate-600 hover:border-red-600"
+                                                        >
+                                                            <Icon name="trash-2" className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="pt-2 border-t border-slate-700">
+                                            <label className="block text-sm font-medium text-slate-400 mb-1">Tamanho da Barra Padrão (mm)</label>
+                                            <input type="number" value={standardLength} onChange={(e) => { setStandardLength(Number(e.target.value)); setResults(null); }} className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-100" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-1">Espessura Lâmina de Corte (mm)</label>
+                                            <input type="number" min="0" step="0.1" value={bladeWidth} onChange={(e) => { setBladeWidth(Number(e.target.value)); setResults(null); }} className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-100" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Adicionar Peças */}
+                                <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-5">
+                                    <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-slate-100">
+                                        <Icon name="ruler" className="w-5 h-5 text-slate-400" />
+                                        Adicionar Peças
+                                    </h2>
+                                    <form onSubmit={handleAddCut} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-1 flex items-center gap-1">
+                                                <Icon name="tag" className="w-3 h-3" /> Modelo / Medida
+                                            </label>
+                                            <select value={currentProfile} onChange={(e) => setCurrentProfile(e.target.value)} className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-100">
+                                                {FIXED_PROFILES.map(profile => (
+                                                    <option key={profile} value={profile}>{profile}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-1">Tamanho (mm)</label>
+                                            <input type="number" value={currentLength} onChange={(e) => setCurrentLength(e.target.value)} className="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-100" />
+                                        </div>
+                                        {error && <div className="text-red-400 text-sm flex items-center gap-1 bg-red-900/30 p-2 rounded-md border border-red-800"><Icon name="alert-circle" className="w-4 h-4" />{error}</div>}
+                                        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                                            <Icon name="plus" className="w-5 h-5" /> Adicionar à Lista
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {/* Lista */}
+                                {cutList.length > 0 && (
+                                    <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-5 flex flex-col h-[300px]">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h2 className="text-lg font-semibold text-slate-100">Lista de Cortes</h2>
+                                            <span className="text-xs font-medium bg-slate-700 px-2 py-1 rounded-full">{cutList.length} total</span>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                                            {cutList.map((item) => (
+                                                <div key={item.id} className="flex items-center justify-between bg-slate-900/50 border border-slate-700 p-3 rounded-lg">
+                                                    <div className="flex flex-col">
+                                                        <div>
+                                                            <span className="font-semibold text-slate-200">{item.length}mm</span>
+                                                        </div>
+                                                        <span className="text-xs font-medium bg-slate-700 px-2 py-0.5 rounded-md w-fit mt-1">{item.profile}</span>
+                                                    </div>
+                                                    <button onClick={() => handleRemoveCut(item.id)} className="text-slate-400 hover:text-red-400 transition-colors"><Icon name="trash-2" className="w-4 h-4" /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="pt-4 mt-4 border-t border-slate-700 flex gap-2">
+                                            <button onClick={clearAll} className="flex-1 py-2 px-4 text-sm font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 transition-colors rounded-lg">Limpar</button>
+                                            <button onClick={calculateOptimization} className="flex-[2] py-2 px-4 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg flex justify-center items-center gap-2"><Icon name="refresh-cw" className="w-4 h-4" /> Calcular</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Painel Direito - Resultados */}
+                            <div className="lg:col-span-2">
+                                {!results ? (
+                                    <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 p-8 h-full flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
+                                        <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center"><Icon name="scissors" className="w-10 h-10 text-slate-600" /></div>
+                                        <div>
+                                            <h3 className="text-lg font-medium text-slate-200 mb-1">Nenhum cálculo feito</h3>
+                                            <p className="text-slate-400 text-sm">Adicione os tamanhos e clique em Calcular.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        
+                                        {/* Cabeçalho Resultados e Botão Exportar */}
+                                        <div className="flex justify-between items-center bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700">
+                                            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                                                <Icon name="file-text" className="w-5 h-5 text-blue-500" />
+                                                {planName || 'Plano de Corte'}
+                                            </h2>
+                                            <button 
+                                                onClick={exportToExcelGraphic} 
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+                                            >
+                                                <Icon name="excel" className="w-5 h-5" />
+                                                Exportar
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col">
+                                                <span className="text-slate-400 text-sm">Barras</span>
+                                                <span className="text-3xl font-bold">{stats.totalBars}</span>
+                                            </div>
+                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col">
+                                                <span className="text-slate-400 text-sm">Aproveitamento</span>
+                                                <span className="text-3xl font-bold text-emerald-400">{stats.efficiency}%</span>
+                                            </div>
+                                            <div className="bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-700 flex flex-col">
+                                                <span className="text-slate-400 text-sm">Sobra Total</span>
+                                                <span className="text-3xl font-bold text-rose-400">{stats.totalWaste}<span className="text-lg">mm</span></span>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-800 rounded-2xl shadow-md border border-slate-700 overflow-hidden">
+                                            <div className="p-5 space-y-8">
+                                                {Object.entries(
+                                                    results.reduce((acc, bin) => {
+                                                        if (!acc[bin.profile]) acc[bin.profile] = [];
+                                                        acc[bin.profile].push(bin);
+                                                        return acc;
+                                                    }, {})
+                                                ).map(([profile, profileBins]) => (
+                                                    <div key={profile} className="space-y-3">
+                                                        <h3 className="font-bold text-slate-200 flex items-center gap-2 border-b border-slate-700 pb-2">
+                                                            <Icon name="tag" className="w-4 h-4 text-blue-500" />
+                                                            Modelo: {profile}
+                                                            <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full ml-auto">{profileBins.length} barra(s)</span>
+                                                        </h3>
+                                                        <div className="divide-y divide-slate-700 border border-slate-700 rounded-lg">
+                                                            {profileBins.map((bin, index) => (
+                                                                <div key={index} className="p-4">
+                                                                    <div className="flex justify-between items-end mb-3">
+                                                                        <h4 className="font-semibold text-slate-200">Barra #{bin.id}</h4>
+                                                                        <span className="text-sm text-slate-400">Sobra: <span className="text-rose-400">{bin.remaining.toFixed(1)}mm</span></span>
+                                                                    </div>
+                                                                    
+                                                                    {/* Representação visual da barra */}
+                                                                    <div className="h-10 w-full bg-slate-900 rounded-md flex relative mb-3 border border-slate-700 overflow-hidden">
+                                                                        {bin.cuts.map((cut, cutIdx) => {
+                                                                            const percentage = (cut / standardLength) * 100;
+                                                                            const colors = ['bg-blue-600', 'bg-indigo-600', 'bg-cyan-600', 'bg-sky-600'];
+                                                                            return (
+                                                                                <div key={cutIdx} style={{ width: `${percentage}%` }} className={`h-full ${colors[cutIdx % colors.length]} border-r border-slate-800 flex items-center justify-center text-xs text-white px-1 overflow-hidden font-medium`}>
+                                                                                    {percentage > 5 ? cut : ''}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                        <div className="h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik0wIDQwbDQwLTQwTTAgODBMODAgME00MCA4MGw0MC00MCIvPjwvZz48L3N2Zz4=')] opacity-50 flex-1"></div>
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex flex-wrap gap-2 text-sm">
+                                                                        <span className="text-slate-400">Cortar:</span>
+                                                                        {bin.cuts.map((cut, cutIdx) => (
+                                                                            <span key={cutIdx} className="bg-slate-900 px-2 py-0.5 rounded border border-slate-700">{cut}mm</span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
