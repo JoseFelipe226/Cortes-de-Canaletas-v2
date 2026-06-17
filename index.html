@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Otimizador de Cortes</title>
     
+    <!-- Favicon Embutido -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2I4MmY2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iNiIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSI2IiBjeT0iMTgiIHI9IjMiLz48bGluZSB4MT0iMjAiIHkxPSI0IiB4Mj0iOC4xMiIgeTI9IjE1Ljg4Ii8+PGxpbmUgeDE9IjE0LjQ3IiB5MT0iMTQuNDgiIHgyPSIyMCIgeTI9IjIwIi8+PGxpbmUgeDE9IjguMTIiIHkxPSI4LjEyIiB4Mj0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==">
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -14,11 +16,21 @@
         }
     </script>
     
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        Babel.registerPreset("react-classic", {
+            presets: [
+                [Babel.availablePresets["react"], { runtime: "classic" }]
+            ]
+        });
+    </script>
 
+    <!-- SheetJS (Excel) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
     <style>
@@ -33,8 +45,8 @@
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <script type="text/babel" data-presets="env,react-classic">
+        const { useState, useMemo, useEffect } = React;
 
         const Icons = {
             'settings-2': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="7" r="3"/><circle cx="8" cy="17" r="3"/></svg>,
@@ -47,7 +59,11 @@
             'scissors': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
             'excel': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>,
             'file-text': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>,
+            'external-link': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
             'save': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
+            'folder': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>,
+            'check-circle': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+            'calculator': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>,
             'sun': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
             'moon': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
             'upload-cloud': (className) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>,
@@ -68,6 +84,7 @@
         ];
 
         function App() {
+            // --- CONTROLE DE TEMA ---
             const [isDark, setIsDark] = useState(() => {
                 const saved = localStorage.getItem('theme');
                 return saved !== 'light'; 
@@ -91,201 +108,13 @@
                 return saved ? JSON.parse(saved) : {};
             });
 
-            const [planName, setPlanName] = useState(() => localStorage.getItem('opt_planName') || 'Novo Projeto');
-            const [standardLength, setStandardLength] = useState(() => Number(localStorage.getItem('opt_standardLength') || 2000));
-            const [bladeWidth, setBladeWidth] = useState(() => Number(localStorage.getItem('opt_bladeWidth') || 0));
-            const [cutList, setCutList] = useState(() => {
-                const saved = localStorage.getItem('opt_cutList');
-                return saved ? JSON.parse(saved) : [];
+            const [planName, setPlanName] = useState(() => {
+                const saved = localStorage.getItem('opt_planName');
+                return saved !== null ? saved : 'Novo Projeto';
             });
-            const [results, setResults] = useState(() => {
-                const saved = localStorage.getItem('opt_results');
-                return saved ? JSON.parse(saved) : null;
-            });
-            const [currentProfile, setCurrentProfile] = useState(FIXED_PROFILES[0]);
-            const [currentLength, setCurrentLength] = useState('');
-            const [error, setError] = useState('');
 
-            useEffect(() => { localStorage.setItem('opt_planName', planName); }, [planName]);
-            useEffect(() => { localStorage.setItem('opt_standardLength', standardLength); }, [standardLength]);
-            useEffect(() => { localStorage.setItem('opt_bladeWidth', bladeWidth); }, [bladeWidth]);
-            useEffect(() => { localStorage.setItem('opt_cutList', JSON.stringify(cutList)); }, [cutList]);
-            useEffect(() => {
-                if (results) localStorage.setItem('opt_results', JSON.stringify(results));
-                else localStorage.removeItem('opt_results');
-            }, [results]);
-            useEffect(() => { localStorage.setItem('opt_savedProjects', JSON.stringify(savedProjects)); }, [savedProjects]);
-
-            const openConfirm = (title, message, onConfirm, isDanger = false) => {
-                setModalConfig({ isOpen: true, title, message, onConfirm, isDanger });
-            };
-            const closeConfirm = () => {
-                setModalConfig({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
-            };
-            const showNotification = (msg) => {
-                setNotification(msg);
-                setTimeout(() => setNotification(''), 4000);
-            };
-
-            const handleSaveProject = () => {
-                const nameToSave = planName.trim();
-                if (!nameToSave) { setError('Dê um nome ao projeto antes de salvar.'); return; }
-                const newProjectData = { standardLength, bladeWidth, cutList, results, lastSaved: new Date().toISOString() };
-                setSavedProjects(prev => ({ ...prev, [nameToSave]: newProjectData }));
-                showNotification(`Projeto "${nameToSave}" guardado com sucesso!`);
-                setError('');
-            };
-
-            const handleLoadProject = (e) => {
-                const name = e.target.value;
-                if (!name) return;
-                openConfirm("Carregar Projeto", `Tem a certeza que deseja carregar o projeto "${name}"? O seu trabalho atual (se não foi salvo) será perdido.`, () => {
-                    const proj = savedProjects[name];
-                    setPlanName(name);
-                    setStandardLength(proj.standardLength);
-                    setBladeWidth(proj.bladeWidth);
-                    setCutList(proj.cutList);
-                    setResults(proj.results || null);
-                    showNotification(`Projeto "${name}" carregado.`);
-                });
-                e.target.value = ""; 
-            };
-
-            const handleAddCut = (e) => {
-                e.preventDefault();
-                setError('');
-                const length = parseFloat(currentLength);
-                if (isNaN(length) || length <= 0) { setError('O tamanho da peça deve ser maior que zero.'); return; }
-                if (length > standardLength) { setError(`O tamanho não pode ser maior que a barra original (${standardLength}mm).`); return; }
-                const newItem = { id: Math.random().toString(36).substr(2, 9), length, quantity: 1, profile: currentProfile };
-                setCutList([...cutList, newItem]);
-                setCurrentLength('');
-                setResults(null);
-            };
-
-            const handleRemoveCut = (id) => {
-                setCutList(cutList.filter(item => item.id !== id));
-                setResults(null);
-            };
-
-            const downloadTemplate = () => {
-                const wb = XLSX.utils.book_new();
-                const wsData = [["Modelo da Canaleta", "Tamanho (mm)"]];
-                FIXED_PROFILES.forEach((profile, index) => {
-                    const dummySize = 500 + (index * 50);
-                    wsData.push([profile, dummySize]);
-                });
-                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                ws['!cols'] = [{ wch: 30 }, { wch: 15 }];
-                XLSX.utils.book_append_sheet(wb, ws, "Dados");
-                XLSX.writeFile(wb, "Modelo_Importacao.xlsx");
-            };
-
-            const handleFileUpload = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    try {
-                        const bstr = evt.target.result;
-                        const wb = XLSX.read(bstr, { type: 'binary' });
-                        const wsname = wb.SheetNames[0];
-                        const ws = wb.Sheets[wsname];
-                        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                        const newItems = [];
-                        for (let i = 1; i < data.length; i++) {
-                            const row = data[i];
-                            if (row && row.length >= 2) {
-                                const profileName = String(row[0]).trim();
-                                const length = parseFloat(row[1]);
-                                if (profileName && !isNaN(length) && length > 0) {
-                                    newItems.push({ id: Math.random().toString(36).substr(2, 9), length: length, quantity: 1, profile: profileName });
-                                }
-                            }
-                        }
-                        if (newItems.length > 0) {
-                            setCutList(prev => [...prev, ...newItems]);
-                            setResults(null);
-                            setError('');
-                            showNotification(`${newItems.length} peças importadas com sucesso!`);
-                        } else {
-                            setError('Nenhum dado válido encontrado. Verifique a planilha.');
-                        }
-                    } catch (error) {
-                        setError("Erro ao ler o arquivo Excel. Formato inválido.");
-                    }
-                    e.target.value = null;
-                };
-                reader.readAsBinaryString(file);
-            };
-
-            const calculateOptimization = () => {
-                if (cutList.length === 0) {
-                    setError('Adicione pelo menos uma peça para otimizar.');
-                    return;
-                }
-                setError('');
-                const grouped = cutList.reduce((acc, item) => {
-                    if (!acc[item.profile]) acc[item.profile] = [];
-                    acc[item.profile].push(item.length);
-                    return acc;
-                }, {});
-
-                const newResults = {};
-                for (const [profile, pieces] of Object.entries(grouped)) {
-                    pieces.sort((a, b) => b - a);
-                    const bars = [];
-                    for (const piece of pieces) {
-                        if (piece > standardLength) continue; 
-                        let placed = false;
-                        for (let i = 0; i < bars.length; i++) {
-                            const bar = bars[i];
-                            const cutLoss = bar.cuts.length > 0 ? bladeWidth : 0;
-                            if (bar.used + cutLoss + piece <= standardLength) {
-                                bar.cuts.push(piece);
-                                bar.used += cutLoss + piece;
-                                placed = true;
-                                break;
-                            }
-                        }
-                        if (!placed) {
-                            bars.push({ cuts: [piece], used: piece });
-                        }
-                    }
-                    newResults[profile] = bars.map((bar, index) => ({
-                        id: index + 1,
-                        cuts: bar.cuts,
-                        used: bar.used,
-                        waste: standardLength - bar.used,
-                        remaining: standardLength - bar.used
-                    }));
-                }
-                setResults(newResults);
-                showNotification('Cálculo de otimização concluído com sucesso!');
-            };
-
-            // ---- FUNÇÃO DE EXPORTAÇÃO EXCEL CORRIGIDA ----
-            const exportToExcelGraphic = () => {
-                if (!results) return;
-                
-                try {
-                    const wb = XLSX.utils.book_new();
-                    const aoa = [];
-                    const merges = [];
-                    let rowIndex = 0;
-                    
-                    const cutColors = ["2563EB", "4F46E5", "0891B2", "0284C7"];
-                    const wasteColor = "E2E8F0";
-                    const displayPlanName = planName.trim() || "Plano de Corte";
-                    
-                    aoa.push([{ v: displayPlanName, s: { font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, alignment: { horizontal: "center", vertical: "center" } } }]);
-                    merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 100 } });
-                    rowIndex++;
-                    aoa.push(new Array(101).fill(""));
-                    rowIndex++;
-
-                    for (const [profile, bins] of Object.entries(results)) {
-                        aoa.push([{ v: `Modelo: ${profile} (${bins.length} barras)`, s: { font: { bold: true, sz: 14, color: { rgb: "1E293B" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "                const saved = localStorage.getItem('opt_standardLength');
+            const [standardLength, setStandardLength] = useState(() => {
+                const saved = localStorage.getItem('opt_standardLength');
                 return saved !== null ? Number(saved) : 2000;
             });
 
@@ -614,10 +443,10 @@
                                 </div>
                             </div>
                             <div className="flex gap-3 w-full sm:w-auto flex-col sm:flex-row">
-                                <a href="//josefelipe226.github.io/Cortes-de-Canaletas-v2/dados.html" className="bg-white hover:bg-slate-50 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-slate-300 dark:border-slate-600 w-full justify-center shadow-sm">
+                                <a href="dados.html" className="bg-white hover:bg-slate-50 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-slate-300 dark:border-slate-600 w-full justify-center shadow-sm">
                                     Dados <Icon name="external-link" className="w-4 h-4" />
                                 </a>
-                                <a href="//josefelipe226.github.io/Cortes-de-Canaletas-v2/somador.html" className="bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-amber-500 w-full justify-center shadow-sm">
+                                <a href="somador.html" className="bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors border border-amber-500 w-full justify-center shadow-sm">
                                     Somador <Icon name="calculator" className="w-4 h-4" />
                                 </a>
                             </div>
